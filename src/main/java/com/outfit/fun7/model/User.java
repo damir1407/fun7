@@ -8,32 +8,30 @@ import org.springframework.data.annotation.Id;
 public class User {
     @Id
     Long id;
-
-    String username;
-    String password;
     int usage;
-    String country;
 
-    public User(Long id, String username, String password, int usage, String country) {
+    public User(Long id, int usage) {
         this.id = id;
-        this.username = username;
-        this.password = password;
         this.usage = usage;
-        this.country = country;
     }
 
     public long getId() {
         return this.id;
     }
 
+    public int getUsage() {
+        return this.usage;
+    }
+
+    public void incrementUsage() {
+        this.usage = this.usage + 1;
+    }
+
     @Override
     public String toString() {
         return "{" +
-                "id=" + this.id +
-                ", username='" + this.username + '\'' +
-                ", password='" + this.password + '\'' +
-                ", country=" + this.country + '\'' +
-                ", usage=" + this.usage + '\'' +
-                '}';
+                "\"id\": " + "\"" + this.id + "\"" +
+                ", \"usage\": " + "\"" + this.usage + "\"" +
+                "}";
     }
 }
