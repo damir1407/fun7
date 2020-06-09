@@ -5,6 +5,9 @@ import com.google.gson.JsonObject;
 import com.outfit.fun7.model.Features;
 import com.outfit.fun7.repository.UserRepository;
 import com.outfit.fun7.model.User;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -14,13 +17,21 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
+import java.util.TimeZone;
 
 @Service
 public class FeaturesService {
 
     private final UserRepository userRepository;
+    private final Logger logger = LogManager.getLogger(FeaturesService.class);
 
     @Autowired
     public FeaturesService(UserRepository userRepository) {
@@ -33,7 +44,6 @@ public class FeaturesService {
         Features features = null;
         if (users.isPresent()) {
             user = users.get();
-            System.out.println(user.getUsage());
             features = new Features(multiplayer(user.getUsage(), cc), customerSupport(timezone), ads(cc));
             user.incrementUsage();
             this.userRepository.save(user);
@@ -49,6 +59,21 @@ public class FeaturesService {
     }
 
     private String customerSupport(String timezone) {
+        if (Arrays.asList(TimeZone.getAvailableIDs()).contains(timezone)) {
+            LocalDateTime timeLj= LocalDateTime.now(ZoneId.of("Europe/Ljubljana"));
+            LocalDateTime timeUser = LocalDateTime.now(ZoneId.of(timezone));
+
+            LocalTime startHour = LocalTime.parse("09:00:00", DateTimeFormatter.ofPattern("HH:mm:ss"));
+            LocalTime endHour = LocalTime.parse("15:00:00", DateTimeFormatter.ofPattern("HH:mm:ss"));
+
+            int hourDifference = (int) Duration.between(timeLj, timeUser).toHours();
+            if (startHour.isBefore(LocalTime.from(timeUser.minusHours(hourDifference))) && endHour.isAfter(LocalTime.from(timeUser.minusHours(hourDifference)))) {
+                return "enabled";
+            }
+            else {
+                return "disabled";
+            }
+        }
         return "disabled";
     }
 
@@ -73,7 +98,6 @@ public class FeaturesService {
                 in.close();
                 Gson gson = new Gson();
                 JsonObject convertedObject = new Gson().fromJson(content.toString(), JsonObject.class);
-                System.out.println(convertedObject.get("ads"));
                 if (convertedObject.get("ads").getAsString().equals("sure, why not!")) {
                     return "enabled";
                 }
@@ -82,13 +106,11 @@ public class FeaturesService {
                 }
             }
             else {
-                // TODO: Find nicer way to print error.
-                System.out.println("error");
+                logger.info("External ads API response code: " + status + ", and message: " + con.getResponseMessage());
             }
         }
         catch (IOException e) {
-            // TODO: Find nicer way to print error.
-            System.out.println(e);
+            logger.error("Error while getting ads feature.", e);
         }
 
         return "disabled";

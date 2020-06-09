@@ -1,0 +1,6 @@
+com\outfit\fun7\Fun7Application.class
+com\outfit\fun7\model\User.class
+com\outfit\fun7\repository\UserRepository.class
+com\outfit\fun7\service\FeaturesService.class
+com\outfit\fun7\api\MainController.class
+com\outfit\fun7\model\Features.class
